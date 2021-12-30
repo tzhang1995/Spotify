@@ -1,0 +1,104 @@
+---
+title: "Spotify Analysis"
+output: html_notebook
+---
+
+This is a notebook which outlines the exploratory data analysis on data gathered from the Spotify API.
+
+# Packages
+```{r}
+library(tidyverse)
+library(spotifyr)
+library(keras)
+library(tfruns)
+library(rsample)
+```
+
+# Keys
+```{r}
+id <- "14c6eaf1ec7e4c83872fd09b0c3028c0"
+secret <- "d73f8f923ae645ecbbf06f736447f872"
+token <- get_spotify_access_token(client_id = id, client_secret = secret)
+```
+
+# Getting Information
+## Empty List to Store Data
+```{r}
+# music_data <- list()
+```
+## Gathering Data from Genre's of Interest
+### Functions To Gather Albums / Tracks
+```{r}
+GET_FEATURES <- function(name, key = token, ...){
+  Sys.sleep(.5) # For rate limiting
+  name %>% 
+    get_artist_audio_features(
+      artist = .,
+      authorization = key
+    ) %>% 
+    return()
+  
+}
+
+GET_POPULARITY <- function(track_id, key = token, ...){
+  Sys.sleep(.5) # For rate limiting
+  track_id %>% 
+    get_track(
+      id = .,
+      authorization = key
+    ) %>% 
+    {.$popularity} %>% 
+    return()
+  
+}
+```
+
+### Collecting Top 50 Artist List
+```{r}
+music_data$artists$jazz <- get_genre_artists(genre = "jazz", limit = 50, authorization = token)
+music_data$artists$classical <- get_genre_artists(genre = "classical", limit = 50, authorization = token)
+```
+
+### Collecting Track Features
+```{r}
+music_data$tracks$jazz <- music_data$artists$jazz %>% 
+  select(name, artist_popularity = popularity, followers = followers.total) %>% 
+  mutate(
+    features = pmap(
+      .,
+      .f = GET_FEATURES
+    )
+  ) %>% 
+  unnest(features) %>% 
+  select(artist_name, artist_id, artist_popularity, followers, track_name, track_id, artist_popularity, danceability, energy, loudness, speechiness, acousticness, instrumentalness, liveness, valence, tempo, duration_ms) 
+
+music_data$tracks$classical <- music_data$artists$classical %>% 
+  select(name, artist_popularity = popularity, followers = followers.total) %>% 
+  mutate(
+    features = pmap(
+      .,
+      .f = GET_FEATURES
+    )
+  ) %>% 
+  unnest(features) %>% 
+  select(artist_name, artist_id, artist_popularity, followers, track_name, track_id, artist_popularity, danceability, energy, loudness, speechiness, acousticness, instrumentalness, liveness, valence, tempo, duration_ms) 
+
+music_data$tracks$jazz 
+```
+
+
+
+# Neural Network
+## Preprocessing
+```{r}
+data.NN <- list()
+
+music_data$tracks$classical
+data.NN$classical <- music_data$tracks$classical %>% 
+  select(track_popularity, artist_popularity, danceability, energy, loudness, speechiness, acousticness, instrumentalness, liveness, valence, tempo)
+```
+
+```{r}
+get_artist_audio_features(artist = "Brad Mehldau", authorization = token)
+```
+
