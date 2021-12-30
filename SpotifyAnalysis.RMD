@@ -16,8 +16,6 @@ library(rsample)
 
 # Keys
 ```{r}
-id <- "14c6eaf1ec7e4c83872fd09b0c3028c0"
-secret <- "d73f8f923ae645ecbbf06f736447f872"
 token <- get_spotify_access_token(client_id = id, client_secret = secret)
 ```
 
